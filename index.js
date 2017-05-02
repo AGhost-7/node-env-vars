@@ -1,9 +1,12 @@
 
-var createModule = function(process) {
-	return {
+var createModule = function(env, defaults) {
+	if(!defaults || typeof defaults !== 'object') {
+		defaults = {}
+	}
+	var functions = {
 		boolean: function(key, defaultVal) {
-			if(key in process.env) {
-				var val = process.env[key]
+			if(key in env) {
+				var val = env[key]
 				switch(val) {
 					case '1':
 					case 't':
@@ -21,29 +24,43 @@ var createModule = function(process) {
 			return defaultVal
 		},
 		string: function(key, defaultVal) {
-			if(key in process.env) {
-				return process.env[key]
+			if(key in env) {
+				return env[key]
 			}
 			return defaultVal
 		},
 		number: function(key, defaultVal) {
-			if(key in process.env) {
-				var val = process.env[key]
+			if(key in env) {
+				var val = env[key]
 				return Number(val)
 			}
 			return defaultVal
 		},
 		integer: function(key, defaultVal) {
-			if(key in process.env) {
-				var val = process.env[key]
+			if(key in env) {
+				var val = env[key]
 				return Math.floor(Number(val))
 			}
 			return defaultVal
 		}
 	}
+
+	var module = {}
+	for(var fnKey in functions) {
+		module[fnKey] = (function(fn) {
+			return function(key, defaultVal) {
+				var mergedDefault = arguments.length === 2
+					? defaultVal
+					: defaults[key]
+				return fn(key, mergedDefault)
+			}
+		})(functions[fnKey])
+	}
+
+	return module
 }
 
-module.exports = createModule(process)
+module.exports = createModule(process.env, {})
 
-module.exports.createModule = createModule
+module.exports.create = createModule
 
